@@ -2,3 +2,4 @@ python-telegram-bot
 openai
 nest_asyncio
 python-dotenv
+flask
