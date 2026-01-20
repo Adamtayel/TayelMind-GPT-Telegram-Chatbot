@@ -1,7 +1,7 @@
 import os
 import asyncio
 import threading
-from flask import Flask # Render
+from flask import Flask 
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from openai import OpenAI
 import nest_asyncio
@@ -15,7 +15,8 @@ def home():
     return "Kirov Bot is Alive!"
 
 def run_flask():
-    port = int(os.environ.get("PORT", 10000)) # تأكد من بورت 10000 لـ Render
+    # Use Render port
+    port = int(os.environ.get("PORT", 10000)) 
     app_flask.run(host='0.0.0.0', port=port)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -36,20 +37,33 @@ company_info = {
     )
 }
 
-# message processing 
+# Handle incoming messages
 async def handle_message(update, context):
     if not update.message or not update.message.text:
         return
-        
-    user_msg = update.message.text.lower()
+    
+    # Get user details
+    user = update.message.from_user
+    user_name = user.first_name
+    user_id = user.id
+    username = f"@{user.username}" if user.username else "No Username"
+    user_msg = update.message.text
+    
+    # Print user info in Render logs
+    print(f"--- New Message from {user_name} ({username}) ID: {user_id} ---")
+    print(f"Text: {user_msg}")
 
-    if "اسمك" in user_msg or "what is your name" in user_msg:
+    user_msg_lower = user_msg.lower()
+
+    # Predefined responses
+    if "اسمك" in user_msg_lower or "what is your name" in user_msg_lower:
         await update.message.reply_text("أنا Kirov، المساعد الرسمي لشركة TayelMind.")
-    elif "الشركة" in user_msg or "tayelmind" in user_msg:
+    elif "الشركة" in user_msg_lower or "tayelmind" in user_msg_lower:
         await update.message.reply_text(f"TayelMind هي {company_info['description']}")
-    elif "المطور" in user_msg or "مين عملك" in user_msg or "who made you" in user_msg:
+    elif "المطور" in user_msg_lower or "مين عملك" in user_msg_lower or "who made you" in user_msg_lower:
         await update.message.reply_text("تم تطويري بواسطة Adam Tayel (آدم طايل).")
     else:
+        # AI Response
         if client is None:
             await update.message.reply_text("عذراً، نظام الذكاء الاصطناعي غير متصل حالياً.")
             return
@@ -66,7 +80,7 @@ async def handle_message(update, context):
         )
         await update.message.reply_text(response.choices[0].message.content)
 
-# bot on 
+# Start the bot
 async def main_bot():
     if not TELEGRAM_TOKEN:
         print("Error: TELEGRAM_BOT_TOKEN not found!")
@@ -77,13 +91,14 @@ async def main_bot():
     
     print("Bot is starting...")
     
-    # التصحيح هنا: run_polling بدل start_polling 
-    # وإضافة close_loop=False لمنع الـ RuntimeError
+    # run_polling with close_loop=False to avoid RuntimeError
     await app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
+    # Run Flask in a separate thread
     threading.Thread(target=run_flask, daemon=True).start()
     
+    # Run Telegram Bot
     try:
         asyncio.run(main_bot())
     except Exception as e:
