@@ -1,8 +1,4 @@
 # TayelMind-GPT-Telegram-Chatbot
-A GPT-Powered Telegram chatbot for interactive conversations
-
-#  TayelMind GPT - Telegram Chatbot
-
 A smart Telegram chatbot powered by **OpenAI's GPT-4o** and built with **Python**. This bot provides a seamless conversational experience directly within Telegram, acting as a personal AI assistant.
 
 ---
