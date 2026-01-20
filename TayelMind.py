@@ -1,13 +1,12 @@
 import os
 import asyncio
 import threading
-from flask import Flask #   Render
+from flask import Flask # Render
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from openai import OpenAI
 import nest_asyncio
 
 nest_asyncio.apply()
-
 
 app_flask = Flask(__name__)
 
@@ -16,7 +15,7 @@ def home():
     return "Kirov Bot is Alive!"
 
 def run_flask():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 10000)) # تأكد من بورت 10000 لـ Render
     app_flask.run(host='0.0.0.0', port=port)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -39,6 +38,9 @@ company_info = {
 
 # message processing 
 async def handle_message(update, context):
+    if not update.message or not update.message.text:
+        return
+        
     user_msg = update.message.text.lower()
 
     if "اسمك" in user_msg or "what is your name" in user_msg:
@@ -70,23 +72,18 @@ async def main_bot():
         print("Error: TELEGRAM_BOT_TOKEN not found!")
         return
 
-
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    
-
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Bot is starting...")
     
-   
+    # التصحيح هنا: run_polling بدل start_polling 
+    # وإضافة close_loop=False لمنع الـ RuntimeError
     await app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
-    
     threading.Thread(target=run_flask, daemon=True).start()
     
-    
-    import asyncio
     try:
         asyncio.run(main_bot())
     except Exception as e:
