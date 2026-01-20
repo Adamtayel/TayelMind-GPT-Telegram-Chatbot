@@ -1,14 +1,14 @@
 import os
 import asyncio
 import threading
-from flask import Flask # للتعامل مع Render
+from flask import Flask #   Render
 from telegram.ext import ApplicationBuilder, MessageHandler, filters
 from openai import OpenAI
 import nest_asyncio
 
 nest_asyncio.apply()
 
-# --- 1. جزء الـ Flask عشان Render ميقفلش البوت ---
+
 app_flask = Flask(__name__)
 
 @app_flask.route('/')
@@ -16,15 +16,12 @@ def home():
     return "Kirov Bot is Alive!"
 
 def run_flask():
-    # Render بيحتاج يفتح Port عشان يعتبر الخدمة ناجحة
     port = int(os.environ.get("PORT", 8080))
     app_flask.run(host='0.0.0.0', port=port)
 
-# --- 2. إعدادات التوكنات ---
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API")
 
-# إضافة حماية بسيطة عشان الكود ميعملش Error لو المفتاح مش موجود محلياً
 if not OPENAI_API_KEY:
     print("Warning: OPENAI_API environment variable is not set!")
     client = None
@@ -40,7 +37,7 @@ company_info = {
     )
 }
 
-# --- 3. وظائف معالجة الرسائل ---
+# message processing 
 async def handle_message(update, context):
     user_msg = update.message.text.lower()
 
@@ -67,30 +64,30 @@ async def handle_message(update, context):
         )
         await update.message.reply_text(response.choices[0].message.content)
 
-# --- 4. تشغيل البوت ---
+# bot on 
 async def main_bot():
     if not TELEGRAM_TOKEN:
         print("Error: TELEGRAM_BOT_TOKEN not found!")
         return
 
+
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    
+
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Bot is starting...")
-    # استخدام initialize و start_polling لضمان استقرار العمل في الخلفية
-    await app.initialize()
-    await app.start_polling()
     
-    # حلقة لانهائية لإبقاء البوت حياً
-    while True:
-        await asyncio.sleep(1)
+   
+    await app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
-    # تشغيل Flask في Thread منفصل (الخدعة اللي بتخلي Render يسيب البوت شغال)
+    
     threading.Thread(target=run_flask, daemon=True).start()
     
-    # تشغيل بوت تليجرام
+    
+    import asyncio
     try:
         asyncio.run(main_bot())
-    except KeyboardInterrupt:
-        print("Bot stopped.")
+    except Exception as e:
+        print(f"Error occurred: {e}")
